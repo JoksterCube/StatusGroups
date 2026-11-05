@@ -1,0 +1,9 @@
+{
+  "name": "StatusGroups",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/JoksterCube/StatusGroups",
+  "description": "Tidy status effects: smaller icons, sorted into groups like buffs, cooldowns, negatives and rites. Pick a layout: Icons, Stacked or Vanilla.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2351"
+  ]
+}

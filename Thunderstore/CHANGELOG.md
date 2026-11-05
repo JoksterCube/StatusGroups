@@ -1,0 +1,3 @@
+| Version | Update Notes |
+|----------|---------------|
+| **1.0.0** | **First release.** Shrinks your status effects and sorts them into groups: **Buffs**, **Cooldowns**, **Negatives** and **Passive** (hidden by default). <br>Three layouts: **Icons** (small icons, a row per group), **Stacked** (one icon per group) and **Vanilla** (the game's own list). <br>Show, stack, hide, rename, reorder or re-icon each group, and use **Custom Rules** to put any status into any group. Press **Esc** and drag the icons anywhere on screen. <br>[TempestRite](https://thunderstore.io/c/valheim/p/JoksterCube/TempestRite/)'s rites get groups of their own, and other mods can add theirs. Client only: other players and the server don't need it. |
