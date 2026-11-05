@@ -36,8 +36,7 @@ internal static class GroupRegistry
         Add(Buffs, () => Buffs, 100);
         Add(Cooldowns, () => Cooldowns, 800);
         Add(Negatives, () => Negatives, 1000);
-        // Always on and seldom worth a look, so hidden unless the player wants them.
-        Add(Passive, () => Passive, 400, GroupDisplay.Hidden);
+        Add(Passive, () => Passive, 400);
         // Their own painted icons (GroupIcons).
         foreach (string id in new[] { Buffs, Cooldowns, Negatives, Passive })
         {

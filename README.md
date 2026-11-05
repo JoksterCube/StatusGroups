@@ -27,7 +27,7 @@ Three meads, rested, shelter, a guardian power, set bonuses, a few rites... and 
 ### 🧭 Features
 
 - **🔹 Three layouts:** **Icons** (small icons, a row per group), **Stacked** (one icon per group, with how many it holds and the time of the one ending first) or **Vanilla** (the game's own list).
-- **🗂️ Four groups:** Buffs, Cooldowns, Negatives and Passive, for the game's statuses and any mod's. Passive is hidden until you want it.
+- **🗂️ Four groups:** Buffs, Cooldowns, Negatives and Passive, for the game's statuses and any mod's.
 - **🏷️ Group icons:** a mead bottle, an hourglass, a cracked shield and a campfire mark each group's row. Or pick any status's icon for it.
 - **🎛️ Per group:** show each group expanded, stacked or hidden, rename it and put the groups in any order. Longer groups go on top, and a group too long for one row is split evenly (6 and 5, not 10 and 1).
 - **📏 Your size and text:** icon size, statuses per row, names on or off, and the color and size of every text. Times show whole minutes, and grow big and red in the last minute.
@@ -44,7 +44,7 @@ Three meads, rested, shelter, a guardian power, set bonuses, a few rites... and 
 | Buffs | Rested, the forsaken power, meads and anything else drunk or eaten that isn't food, and other effects that run out (Corpse run, No skill drain...). |
 | Cooldowns | Waits shown with a crossed-out icon, like the healing and stamina meads' wait. |
 | Negatives | Wet, Cold, Freezing, Burning, Frost, Shock, Poison, Smoked, Encumbered, Tarred and the like. |
-| Passive | Resting, Shelter, Campfire, Cozy, Warm, worn gear and set bonuses (Demister, Wishbone...), and other effects that last while something holds. Hidden by default. |
+| Passive | Resting, Shelter, Campfire, Cozy, Warm, worn gear and set bonuses (Demister, Wishbone...), and other effects that last while something holds. |
 
 With [TempestRite](https://thunderstore.io/c/valheim/p/JoksterCube/TempestRite/):
 
@@ -148,5 +148,5 @@ Report bugs or suggest improvements on [GitHub](https://github.com/JoksterCube/S
 ---
 
 **Author:** JoksterCube<br>
-**Version:** 1.0.0<br>
+**Version:** 1.0.1<br>
 **License:** GNU GPL v3 or later
