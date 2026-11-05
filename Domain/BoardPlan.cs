@@ -132,10 +132,12 @@ internal static class BoardPlan
         return sections;
     }
 
-    // Shortest time left first, longest last, statuses without a time at the end. Within each group's run when groups
-    // are kept together, otherwise across the whole block. Stable, so equal times keep their place from frame to frame.
+    // Shortest time left first, longest last, statuses without a time at the end: those from where you are (fire,
+    // shelter) before those from worn gear, which sit last. Within each group's run when groups are kept together,
+    // otherwise across the whole block. Stable, so equal times keep their place from frame to frame.
     // Run every frame, as times change; the order is nearly right already, so this is cheap.
-    internal static void SortByTimeLeft<T>(List<PlannedSection<T>> sections, Func<T, float?> timeLeft, bool keepGroups)
+    internal static void SortByTimeLeft<T>(List<PlannedSection<T>> sections, Func<T, float?> timeLeft, bool keepGroups,
+        Func<T, bool>? worn = null)
     {
         foreach (PlannedSection<T> section in sections)
         {
@@ -143,9 +145,9 @@ internal static class BoardPlan
             for (int i = 1; i < tiles.Count; i++)
             {
                 PlannedTile<T> tile = tiles[i];
-                float left = TimeLeft(tile, timeLeft);
+                float left = TimeLeft(tile, timeLeft, worn);
                 int j = i - 1;
-                while (j >= 0 && (!keepGroups || tiles[j].GroupId == tile.GroupId) && TimeLeft(tiles[j], timeLeft) > left)
+                while (j >= 0 && (!keepGroups || tiles[j].GroupId == tile.GroupId) && TimeLeft(tiles[j], timeLeft, worn) > left)
                 {
                     tiles[j + 1] = tiles[j];
                     j--;
@@ -183,12 +185,15 @@ internal static class BoardPlan
         return pattern.Length < ShortestTimePattern.Length ? ShortestTimePattern : pattern;
     }
 
-    // A stack counts as its member ending first.
-    private static float TimeLeft<T>(PlannedTile<T> tile, Func<T, float?> timeLeft)
+    // A stack counts as its member ending first. Without a time: MaxValue, or past it (infinity) for worn gear.
+    private static float TimeLeft<T>(PlannedTile<T> tile, Func<T, float?> timeLeft, Func<T, bool>? worn)
     {
-        float best = float.MaxValue;
+        float best = float.PositiveInfinity;
         foreach (T member in tile.Members)
-            if (timeLeft(member) is { } left && left < best) best = left;
+        {
+            float left = timeLeft(member) ?? (worn != null && worn(member) ? float.PositiveInfinity : float.MaxValue);
+            if (left < best) best = left;
+        }
         return best;
     }
 

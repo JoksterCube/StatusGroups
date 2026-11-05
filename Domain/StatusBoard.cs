@@ -29,8 +29,11 @@ internal static class StatusBoard
     // A group's icon (Show Group Icons): its size against the status icons, and its gap to the block.
     private const float MarkerScale = 0.8f;
     private const float MarkerGap = 6f;
-    // Status Boxes: room around an icon in its square (at full size), and the group's icon on its banner, against a status icon.
-    private const float BoxPad = 3f;
+    // Status Boxes: room around an icon in its square, against the icon's size (the icon fills about 3/4 of the square,
+    // like an item in a hotbar slot), and the group's icon on its banner, against a status icon.
+    private const float BoxPad = 0.14f;
+    // A text on a square (time or a status's own text) is shrunk to fit this much of the square's width.
+    private const float BoxTextFill = 0.92f;
     private const float BannerIconScale = 0.6f;
     private static readonly Color FlashColor = new(1f, 0.5f, 0.5f, 1f);
     // A time with less than this many seconds left shows in this color.
@@ -157,7 +160,7 @@ internal static class StatusBoard
             _planKey = PlanKey(layout, sort, split, biggest, expand) * 31 + perLine;
         }
         // Group runs only matter in one shared block sorted by group; split blocks hold one group (or stacks).
-        BoardPlan.SortByTimeLeft(_plan, TimeLeft, sort && !split);
+        BoardPlan.SortByTimeLeft(_plan, TimeLeft, sort && !split, StatusClassifier.IsWorn);
 
         Style style = new()
         {
@@ -219,7 +222,7 @@ internal static class StatusBoard
         float iconHeight = icon.height * scale;
         int count = ShowAll(style);
         bool boxes = style.Boxes;
-        float pad = boxes ? BoxPad * scale : 0f;
+        float pad = boxes ? BoxPad * iconWidth : 0f;
         float boxWidth = iconWidth + pad * 2f;
         float boxHeight = iconHeight + pad * 2f;
 
@@ -228,7 +231,8 @@ internal static class StatusBoard
         for (int i = 0; i < count; i++)
         {
             Label label = Labels[i];
-            cellWidth = Mathf.Max(cellWidth, label.TimeWidth, Mathf.Min(label.NameWidth, style.NameWidth));
+            // In Status Boxes the time sits on the square and is shrunk to fit it, so it doesn't widen the cell.
+            cellWidth = Mathf.Max(cellWidth, boxes ? 0f : label.TimeWidth, Mathf.Min(label.NameWidth, style.NameWidth));
             // Room for a time under every icon, so rows keep their height as timed and untimed statuses come and go.
             timeHeight = Mathf.Max(timeHeight, label.TimeHeight);
         }
@@ -892,9 +896,12 @@ internal static class StatusBoard
                     new Vector2(TimeWidth, TimeHeight));
                 return;
             }
-            SetScale(time.rectTransform, 1f);
+            // On the square's bottom, shrunk when wider than the square (a status's own text, like "Comfort: 1").
+            float shrink = TimeWidth > 0f ? Mathf.Min(1f, boxWidth * BoxTextFill / TimeWidth) : 1f;
+            SetScale(time.rectTransform, shrink);
             SetAlignment(time, TextAlignmentOptions.Bottom);
-            Fit(time.rectTransform, new Vector2(left, boxBottom + timeHeight), new Vector2(width, timeHeight));
+            Fit(time.rectTransform, new Vector2(center - boxWidth * 0.5f, boxBottom + timeHeight * shrink),
+                new Vector2(boxWidth / shrink, timeHeight));
         }
 
         private static void SetScale(RectTransform rect, float scale)
@@ -920,6 +927,8 @@ internal static class StatusBoard
     // The parts of one copy of the game's status template.
     private sealed class TileView
     {
+        // The holder the board moves and scales; the template's copy sits inside it. The game's "new" flash animates the
+        // copy's own scale, so without the holder a new icon would pop up at full size, ignoring Icon Size.
         internal RectTransform Root = null!;
         internal Image Icon = null!;
         internal GameObject? Cooldown;
@@ -930,17 +939,31 @@ internal static class StatusBoard
 
         internal static TileView Create(Hud hud, RectTransform parent)
         {
-            RectTransform root = Object.Instantiate(hud.m_statusEffectTemplate, parent);
-            root.gameObject.name = "StatusGroups_Tile";
+            RectTransform template = hud.m_statusEffectTemplate;
+            GameObject holder = new("StatusGroups_Tile", typeof(RectTransform));
+            RectTransform holderRect = (RectTransform)holder.transform;
+            holderRect.SetParent(parent, false);
+            // Same anchors, pivot and size as the template, so its units are the template's own.
+            holderRect.anchorMin = template.anchorMin;
+            holderRect.anchorMax = template.anchorMax;
+            holderRect.pivot = template.pivot;
+            holderRect.sizeDelta = template.sizeDelta;
+            RectTransform root = Object.Instantiate(template, holderRect);
+            root.gameObject.name = "StatusGroups_Status";
+            root.anchorMin = root.anchorMax = template.pivot;
+            root.anchoredPosition = Vector2.zero;
+            root.localScale = Vector3.one;
             root.gameObject.SetActive(true);
             TileView tile = new()
             {
-                Root = root,
+                Root = holderRect,
                 Icon = root.Find("Icon").GetComponent<Image>(),
                 Cooldown = root.Find("Cooldown") is { } cooldown ? cooldown.gameObject : null,
                 Time = root.Find("TimeText") is { } time ? time.GetComponent<TMP_Text>() : null,
                 Animator = root.GetComponentInChildren<Animator>(true)
             };
+            // A sprite that isn't square keeps its shape inside the icon instead of being stretched to fill it.
+            tile.Icon.preserveAspect = true;
             tile.Name = root.Find("Name") is { } name && name.GetComponent<TMP_Text>() is { } named ? named : FirstTextBut(root, tile.Time);
             tile.Count = CountBadge(tile);
             return tile;

@@ -245,6 +245,14 @@ public class TimeSortTests
     }
 
     [Fact]
+    public void Untimed_from_worn_gear_go_after_other_untimed()
+    {
+        PlannedSection<string> section = Section("A:Belt", "A:Fire", "A:Hood", "A:Mead:300", "A:Shelter");
+        BoardPlan.SortByTimeLeft([section], TimeLeft, keepGroups: false, worn: s => s is "A:Belt" or "A:Hood");
+        Assert.Equal(["A:Mead:300", "A:Fire", "A:Shelter", "A:Belt", "A:Hood"], Order(section));
+    }
+
+    [Fact]
     public void Keeping_groups_sorts_only_within_each_group()
     {
         PlannedSection<string> section = Section("A:Mead:300", "A:Food:45", "B:Kin:10", "B:Power:90");

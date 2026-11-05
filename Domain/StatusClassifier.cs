@@ -116,6 +116,13 @@ internal static class StatusClassifier
         return effect.m_ttl > 0f ? GroupRegistry.Buffs : GroupRegistry.Passive;
     }
 
+    // A status given by worn gear (an equipped item or a set bonus).
+    internal static bool IsWorn(StatusEffect effect)
+    {
+        RefreshItems();
+        return Worn.Contains(effect.NameHash());
+    }
+
     // The name shown in game, in the game's language.
     internal static string Shown(StatusEffect effect) =>
         string.IsNullOrEmpty(effect.m_name) ? string.Empty
