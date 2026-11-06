@@ -39,6 +39,8 @@ internal static class StatusBoard
     // A time with less than this many seconds left shows in this color.
     private const float EndingSoon = 60f;
     private static readonly Color EndingSoonColor = new(1f, 0.25f, 0.25f, 1f);
+    // A barrier's damage left to absorb, on top of its icon.
+    private static readonly Color ShieldColor = new(1f, 0.3f, 0.3f, 1f);
     // The backdrop shown while the board can be moved, and its border.
     private static readonly Color HandleColor = new(0f, 0f, 0f, 0.4f);
     private static readonly Color HandleBorder = new(1f, 0.8f, 0.45f, 0.6f);
@@ -392,6 +394,7 @@ internal static class StatusBoard
         if (tile.Name && tile.Name!.gameObject.activeSelf) tile.Name.gameObject.SetActive(false);
         if (tile.Time && tile.Time!.gameObject.activeSelf) tile.Time.gameObject.SetActive(false);
         if (tile.Count && tile.Count!.gameObject.activeSelf) tile.Count.gameObject.SetActive(false);
+        if (tile.Shield && tile.Shield!.gameObject.activeSelf) tile.Shield.gameObject.SetActive(false);
         if (!tile.Root.gameObject.activeSelf) tile.Root.gameObject.SetActive(true);
         Rect icon = _metrics!.Icon;
         PlaceTile(tile, center - icon.center * scale, scale);
@@ -465,19 +468,15 @@ internal static class StatusBoard
         if (tile.Count)
         {
             if (tile.Count!.gameObject.activeSelf != planned.Stacked) tile.Count.gameObject.SetActive(planned.Stacked);
-            if (planned.Stacked)
-            {
-                SetText(tile.Count, planned.Members.Count.ToString(), style.Color);
-                // In the board's font, like the times.
-                if (_metrics!.Font && tile.Count.font != _metrics.Font)
-                {
-                    tile.Count.font = _metrics.Font;
-                    if (_metrics.FontMaterial) tile.Count.fontSharedMaterial = _metrics.FontMaterial;
-                }
-                // Inside the scaled icon: undo the icon's scale so it shows at Time Font Size.
-                float size = style.TimeFontSize /Mathf.Max(0.01f, style.Scale);
-                if (!Mathf.Approximately(tile.Count.fontSize, size)) tile.Count.fontSize = size;
-            }
+            if (planned.Stacked) SetBadge(tile.Count, planned.Members.Count.ToString(), style.Color, style);
+        }
+        // A barrier (Magic Barrier...) shows how much damage it can still take, like "14/210".
+        if (tile.Shield)
+        {
+            string? shield = ShieldText(shown);
+            bool showShield = shield != null;
+            if (tile.Shield!.gameObject.activeSelf != showShield) tile.Shield.gameObject.SetActive(showShield);
+            if (showShield) SetBadge(tile.Shield, shield!, ShieldColor, style);
         }
 
         if (!tile.Root.gameObject.activeSelf) tile.Root.gameObject.SetActive(true);
@@ -486,6 +485,28 @@ internal static class StatusBoard
             foreach (StatusEffect member in planned.Members) member.m_isNew = false;
             if (tile.Animator) tile.Animator!.SetTrigger("flash");
         }
+    }
+
+    // A text inside the icon, in the board's font (like the times) and at Time Font Size whatever the icon's size.
+    private static void SetBadge(TMP_Text badge, string value, Color color, Style style)
+    {
+        SetText(badge, value, color);
+        if (_metrics!.Font && badge.font != _metrics.Font)
+        {
+            badge.font = _metrics.Font;
+            if (_metrics.FontMaterial) badge.fontSharedMaterial = _metrics.FontMaterial;
+        }
+        // Inside the scaled icon: undo the icon's scale.
+        float size = style.TimeFontSize / Mathf.Max(0.01f, style.Scale);
+        if (!Mathf.Approximately(badge.fontSize, size)) badge.fontSize = size;
+    }
+
+    // "left/total" damage a barrier can still absorb, or null for any other status.
+    private static string? ShieldText(StatusEffect effect)
+    {
+        if (effect is not SE_Shield shield || shield.m_totalAbsorbDamage <= 0f) return null;
+        float left = Mathf.Max(0f, shield.m_totalAbsorbDamage - shield.m_damage);
+        return $"{Mathf.CeilToInt(left)}/{Mathf.RoundToInt(shield.m_totalAbsorbDamage)}";
     }
 
     // The status with a time that runs out first; a group with no timed statuses shows its first.
@@ -937,6 +958,7 @@ internal static class StatusBoard
         internal TMP_Text? Name;
         internal TMP_Text? Time;
         internal TMP_Text? Count;
+        internal TMP_Text? Shield;
         internal Animator? Animator;
 
         internal static TileView Create(Hud hud, RectTransform parent)
@@ -970,7 +992,10 @@ internal static class StatusBoard
             // A sprite that isn't square keeps its shape inside the icon instead of being stretched to fill it.
             tile.Icon.preserveAspect = true;
             tile.Name = root.Find("Name") is { } name && name.GetComponent<TMP_Text>() is { } named ? named : FirstTextBut(root, tile.Time);
-            tile.Count = CountBadge(tile);
+            tile.Count = Badge(tile, "StatusGroups_Count", Vector2.one, new Vector2(4f, 4f), new Vector2(32f, 20f),
+                TextAlignmentOptions.TopRight);
+            tile.Shield = Badge(tile, "StatusGroups_Shield", new Vector2(0.5f, 1f), new Vector2(0f, 4f), new Vector2(64f, 20f),
+                TextAlignmentOptions.Top);
             return tile;
         }
 
@@ -981,27 +1006,29 @@ internal static class StatusBoard
             return null;
         }
 
-        // How many statuses a stacked group holds, in the icon's top right corner, in the time's font.
-        private static TMP_Text? CountBadge(TileView tile)
+        // A text inside the icon, pinned at corner (0..1 of the icon), in the time's font: how many statuses a stacked
+        // group holds (top right), or a barrier's damage left (top middle).
+        private static TMP_Text? Badge(TileView tile, string name, Vector2 corner, Vector2 offset, Vector2 size,
+            TextAlignmentOptions alignment)
         {
             TMP_Text? source = tile.Time ? tile.Time : tile.Name;
             if (!source) return null;
-            TMP_Text count = Object.Instantiate(source!, tile.Icon.transform);
-            count.gameObject.name = "StatusGroups_Count";
-            foreach (Transform child in count.transform) Object.Destroy(child.gameObject);
-            RectTransform rect = count.rectTransform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
-            rect.anchoredPosition = new Vector2(4f, 4f);
-            rect.sizeDelta = new Vector2(32f, 20f);
+            TMP_Text badge = Object.Instantiate(source!, tile.Icon.transform);
+            badge.gameObject.name = name;
+            foreach (Transform child in badge.transform) Object.Destroy(child.gameObject);
+            RectTransform rect = badge.rectTransform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
+            rect.anchoredPosition = offset;
+            rect.sizeDelta = size;
             rect.localScale = Vector3.one;
-            count.enableAutoSizing = false;
-            count.alignment = TextAlignmentOptions.TopRight;
-            count.textWrappingMode = TextWrappingModes.NoWrap;
-            count.overflowMode = TextOverflowModes.Overflow;
-            count.raycastTarget = false;
-            count.text = string.Empty;
-            count.gameObject.SetActive(false);
-            return count;
+            badge.enableAutoSizing = false;
+            badge.alignment = alignment;
+            badge.textWrappingMode = TextWrappingModes.NoWrap;
+            badge.overflowMode = TextOverflowModes.Overflow;
+            badge.raycastTarget = false;
+            badge.text = string.Empty;
+            badge.gameObject.SetActive(false);
+            return badge;
         }
     }
 

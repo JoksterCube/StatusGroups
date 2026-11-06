@@ -22,6 +22,12 @@ Three meads, rested, shelter, a guardian power, set bonuses, a few rites... and 
 	<img src="https://raw.githubusercontent.com/JoksterCube/StatusGroups/refs/heads/main/Screenshots/Simple.jpg" alt="Three short rows of status effects: meads, worn gear and one more" width="500">
 </p>
 
+**Magic Barrier shows how much it can still take:** damage left and its full strength, in red on top of the icon.
+
+<p align="center">
+	<img src="https://raw.githubusercontent.com/JoksterCube/StatusGroups/refs/heads/main/Screenshots/MagicBarrier.png" alt="Magic Barrier icon with 178/210 in red above it and 4m below" width="400">
+</p>
+
 ---
 
 ### 🧭 Features
@@ -31,6 +37,7 @@ Three meads, rested, shelter, a guardian power, set bonuses, a few rites... and 
 - **🏷️ Group icons:** a mead bottle, an hourglass, a cracked shield and a campfire mark each group's row. Or pick any status's icon for it.
 - **🎛️ Per group:** show each group expanded, stacked or hidden, rename it and put the groups in any order. Longer groups go on top, and a group too long for one row is split evenly (6 and 5, not 10 and 1).
 - **📏 Your size and text:** icon size, statuses per row, names on or off, and the color and size of every text. Times show whole minutes, and grow big and red in the last minute.
+- **🛡️ Barrier strength:** Magic Barrier shows the damage it can still absorb, like `178/210`, on top of its icon.
 - **🖱️ Put it anywhere:** press **Esc** and drag the icons where you want them. Right-click to put them back. Stacked groups open up while the menu is open, so you can see what they hold.
 - **✍️ Your own rules:** move any status, from the game or any mod, into any group, or make new groups.
 - **🌩️ Other JoksterCube mods:** TempestRite's blessings join Buffs and kinship waits Cooldowns, and its Domain & Reckoning rites and World Rites get a group each. PingMark's Perception goes to Buffs, ProtectSpawnerFarms' statuses to Passive.
@@ -148,5 +155,5 @@ Report bugs or suggest improvements on [GitHub](https://github.com/JoksterCube/S
 ---
 
 **Author:** JoksterCube<br>
-**Version:** 1.0.3<br>
+**Version:** 1.0.4<br>
 **License:** GNU GPL v3 or later

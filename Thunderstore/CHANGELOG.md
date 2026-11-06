@@ -1,5 +1,6 @@
 | Version | Update Notes |
 |----------|---------------|
+| **1.0.4** | **New:**<br>• **Magic Barrier** shows how much damage it can still absorb, like `178/210`, in red on top of its icon. |
 | **1.0.3** | **Fixes:**<br>• Icons no longer get stuck smaller after a status comes and goes quickly (like a campfire's warmth).<br>• No more "Font Asset was not found" warnings in the game's log. |
 | **1.0.2** | **Changes:**<br>• Statuses without a time from worn gear now sort after those from where you are (fire, shelter).<br>**Fixes:**<br>• New statuses no longer pop up at full size before shrinking to **Icon Size**.<br>• **Status Boxes**: icons fit their square evenly at every **Icon Size**.<br>• **Status Boxes**: long status texts (like "Comfort: 1") shrink to fit the square instead of widening it.<br>• Icons that aren't square keep their shape instead of being stretched. |
 | **1.0.1** | • The **Passive** group is now shown by default.<br>Already played with 1.0.0? Set **Passive Display** to **Default** in the config to show it. |
