@@ -32,8 +32,11 @@ internal static class StatusBoard
     // Status Boxes: room around an icon in its square, against the icon's size (the icon fills about 3/4 of the square,
     // like an item in a hotbar slot), and the group's icon on its banner, against a status icon.
     private const float BoxPad = 0.14f;
-    // A text on a square (time or a status's own text) is shrunk to fit this much of the square's width.
-    private const float BoxTextFill = 0.92f;
+    // A text on a square (time or a status's own text) keeps this far (against the square's width) from each of the
+    // square's edges, so it stays inside the square's frame.
+    private const float BoxTextInset = 0.06f;
+    // The same for a barrier's damage left, on the icon's top.
+    private const float BoxBadgeInset = 0.03f;
     private const float BannerIconScale = 0.6f;
     private static readonly Color FlashColor = new(1f, 0.5f, 0.5f, 1f);
     // A time with less than this many seconds left shows in this color.
@@ -125,6 +128,7 @@ internal static class StatusBoard
         Backs.Clear();
         _backs = null;
         _slot = null;
+        BadgeRoom.Clear();
         _plan = [];
         PlannedFor.Clear();
         _planKey = int.MinValue;
@@ -488,18 +492,33 @@ internal static class StatusBoard
     }
 
     // A text inside the icon, in the board's font (like the times) and at Time Font Size whatever the icon's size.
+    // Shrunk when wider than the icon (in Status Boxes: than the inside of its square), like "650/650".
     private static void SetBadge(TMP_Text badge, string value, Color color, Style style)
     {
+        bool changed = badge.text != value;
         SetText(badge, value, color);
         if (_metrics!.Font && badge.font != _metrics.Font)
         {
             badge.font = _metrics.Font;
             if (_metrics.FontMaterial) badge.fontSharedMaterial = _metrics.FontMaterial;
+            changed = true;
         }
         // Inside the scaled icon: undo the icon's scale.
         float size = style.TimeFontSize / Mathf.Max(0.01f, style.Scale);
-        if (!Mathf.Approximately(badge.fontSize, size)) badge.fontSize = size;
+        changed |= SetFontSize(badge, size);
+        float room = ((RectTransform)badge.transform.parent).rect.width *
+                     (style.Boxes ? (1f + BoxPad * 2f) * (1f - BoxBadgeInset * 2f) : 1f);
+        changed |= !Mathf.Approximately(BadgeRoom.TryGetValue(badge, out float last) ? last : -1f, room);
+        if (!changed) return;
+        BadgeRoom[badge] = room;
+        // Measured from the text's shape, so the size doesn't flicker as the digits change.
+        float width = Measure(badge, BoardPlan.TimePattern(value)).x;
+        float shrink = width > room && width > 0f ? room / width : 1f;
+        Vector3 scale = new(shrink, shrink, 1f);
+        if (badge.rectTransform.localScale != scale) badge.rectTransform.localScale = scale;
     }
+
+    private static readonly Dictionary<TMP_Text, float> BadgeRoom = new();
 
     // "left/total" damage a barrier can still absorb, or null for any other status.
     private static string? ShieldText(StatusEffect effect)
@@ -845,6 +864,9 @@ internal static class StatusBoard
         {
             _endingSoonSize = endingSoonSize;
             _timeFontSize = timeFontSize;
+            // Shown before measuring: a hidden text can measure narrower than it draws.
+            if (name.gameObject.activeSelf != (text != null)) name.gameObject.SetActive(text != null);
+            if (time.gameObject.activeSelf != (timeText != null)) time.gameObject.SetActive(timeText != null);
             bool resized = SetFontSize(name, fontSize) | SetFontSize(time, timeFontSize);
             if (resized || !_measured)
             {
@@ -872,8 +894,6 @@ internal static class StatusBoard
                     TimeWidth = pattern == null ? 0f : Measure(time, pattern).x;
                 }
             }
-            if (name.gameObject.activeSelf != (text != null)) name.gameObject.SetActive(text != null);
-            if (time.gameObject.activeSelf != (timeText != null)) time.gameObject.SetActive(timeText != null);
         }
 
         // How tall the name is when it may be this wide, wrapped onto as many lines as it needs.
@@ -906,11 +926,13 @@ internal static class StatusBoard
             float left = center - width * 0.5f;
             SetAlignment(name, TextAlignmentOptions.Top);
             Fit(name.rectTransform, new Vector2(left, boxBottom), new Vector2(width, nameHeight));
+            float inset = boxWidth * BoxTextInset;
+            float inner = boxWidth - inset * 2f;
             if (_endingSoonSize is { } size && TimeWidth > 0f && TimeHeight > 0f)
             {
                 float zoom = size > 0f && _timeFontSize > 0f
                     ? size / _timeFontSize
-                    : Mathf.Max(1f, Mathf.Min(boxWidth * 0.95f / TimeWidth, boxHeight * 0.8f / TimeHeight));
+                    : Mathf.Max(1f, Mathf.Min(inner / TimeWidth, (boxHeight - inset * 2f) / TimeHeight));
                 SetAlignment(time, TextAlignmentOptions.Center);
                 SetScale(time.rectTransform, zoom);
                 // Pivot at the top left: shift so the scaled text's middle is the square's.
@@ -919,11 +941,12 @@ internal static class StatusBoard
                     new Vector2(TimeWidth, TimeHeight));
                 return;
             }
-            // On the square's bottom, shrunk when wider than the square (a status's own text, like "Comfort: 1").
-            float shrink = TimeWidth > 0f ? Mathf.Min(1f, boxWidth * BoxTextFill / TimeWidth) : 1f;
+            // On the square's bottom, inside its frame, shrunk when wider than the inside (a status's own text, like
+            // "Comfort: 1").
+            float shrink = TimeWidth > 0f ? Mathf.Min(1f, inner / TimeWidth) : 1f;
             SetScale(time.rectTransform, shrink);
             SetAlignment(time, TextAlignmentOptions.Bottom);
-            Fit(time.rectTransform, new Vector2(center - boxWidth * 0.5f, boxBottom + timeHeight * shrink),
+            Fit(time.rectTransform, new Vector2(center - boxWidth * 0.5f, boxBottom + inset + timeHeight * shrink),
                 new Vector2(boxWidth / shrink, timeHeight));
         }
 
