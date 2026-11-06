@@ -148,5 +148,5 @@ Report bugs or suggest improvements on [GitHub](https://github.com/JoksterCube/S
 ---
 
 **Author:** JoksterCube<br>
-**Version:** 1.0.2<br>
+**Version:** 1.0.3<br>
 **License:** GNU GPL v3 or later

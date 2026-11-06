@@ -745,6 +745,8 @@ internal static class StatusBoard
     {
         Metrics metrics = _metrics!;
         GameObject created = new(name, typeof(RectTransform));
+        // Inactive until the font is set: an active text looks for TextMeshPro's default font at once and warns in the log.
+        created.SetActive(false);
         created.transform.SetParent(_root, false);
         TextMeshProUGUI text = created.AddComponent<TextMeshProUGUI>();
         if (metrics.Font)
@@ -962,6 +964,9 @@ internal static class StatusBoard
                 Time = root.Find("TimeText") is { } time ? time.GetComponent<TMP_Text>() : null,
                 Animator = root.GetComponentInChildren<Animator>(true)
             };
+            // A tile hidden mid "new" flash would otherwise freeze at the flash's smaller size and keep it when shown
+            // again: let the flash finish instead.
+            if (tile.Animator) tile.Animator!.keepAnimatorStateOnDisable = true;
             // A sprite that isn't square keeps its shape inside the icon instead of being stretched to fill it.
             tile.Icon.preserveAspect = true;
             tile.Name = root.Find("Name") is { } name && name.GetComponent<TMP_Text>() is { } named ? named : FirstTextBut(root, tile.Time);

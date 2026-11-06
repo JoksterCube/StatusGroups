@@ -10,7 +10,7 @@ internal static class Constants
     internal static class Plugin
     {
         internal const string ModName = "StatusGroups";
-        internal const string ModVersion = "1.0.2";
+        internal const string ModVersion = "1.0.3";
         internal const string Author = "JoksterCube";
         internal const string ModGUID = $"{Author}.{ModName}";
         internal const string Description = "Tidy status effects: smaller icons, sorted into groups like buffs, cooldowns, negatives and rites. Pick a layout: Icons, Stacked or Vanilla.";
